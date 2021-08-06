@@ -1,0 +1,1 @@
+gcc cjson/cjson.c main.c -o test.exe
