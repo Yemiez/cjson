@@ -1,1 +1,1 @@
-gcc cjson/cjson.c main.c -o test.exe
+gcc cjson/cjson.c main.c -D CJSON_ENABLE_TIMER -o test.exe
