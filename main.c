@@ -4,17 +4,6 @@
 int main()
 {
     cjson_init(NULL);
-
-    /*
-    cjson_value* value = cjson_parse(
-        "{"
-            "\"key1\"" ":" "[1, 2, 3, 4]" ","
-            "\"key2\"" ":" "null" ","
-            "\"key3\"" ":" "true" ","
-            "\"key4\"" ":" "false" ","
-            "\"key5\"" ":" "{\"depth\": 2}" ","
-        "}"
-    );*/
    cjson_value* value = cjson_parse_file("tests/jeopardy_questions.json");
 
     if (value) {
