@@ -1,4 +1,7 @@
-gcc cjson/cjson.c examples/looping.c -I. -O3 -o examples/bin/looping
-gcc cjson/cjson.c examples/searching.c -I. -O3 -o examples/bin/searching
-gcc cjson/cjson.c examples/serialize.c -I. -O3 -o examples/bin/serialize
-gcc cjson/cjson.c examples/replace.c -I. -O3 -o examples/bin/replace
+shopt -s nullglob
+for i in examples/*.c; do
+    base=$(basename "$i")
+    filename="${base%.*}"
+    gcc cjson/cjson.c "$i" -I. -O3 -o "examples/bin/$filename"
+    printf "Compiled $i --> examples/bin/$filename\n"
+done
