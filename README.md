@@ -12,4 +12,6 @@ The library only consists of two files: `cjson.h` and its counterpart `cjson.c`.
 * Optimise memory usage (currently the internal `cjson_state*` hogs up a lot of memory during parse);
 * Optimise general speed of parsing (replace function calls?).
 * Figure out if everything I've done is good or bad C :^)
+* Add proper multi-threading support when memory-logging is enabled.
+* Fix some memory leaks that happen when parsing fails (in specific `cjson.c!cjson_parse_impl`)
 
