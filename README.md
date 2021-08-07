@@ -3,6 +3,9 @@ A simple JSON parser made in C, compiled and tested on Linux (Ubuntu 20.04, GCC 
 
 This is a sample project, used as an education tool to become more proficient in C
 
+## Building
+The library only consists of two files: `cjson.h` and its counterpart `cjson.c`. To compile it you can just pass this to your preferred compiler. You can also use the script files `build-linux.sh` or `build-win32.sh` (this will build the example executable with `main.c`).
+
 ## TODO
 * Documentation and examples
 * Utility functions (such as convenient lookup functions, i.e. `key>depth1>depth2>depth3>[4]`);.
