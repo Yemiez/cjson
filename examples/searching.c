@@ -34,5 +34,8 @@ int main()
     printf("Pi is: %g\n", cjson_get_double(pi));
     printf("Name is: %s\n", cjson_get_string(name));
     printf("and he is: %s\n", cjson_true(happy) ? "happy" : "sad");
+
+    // Remember to free the object
+    cjson_free_value(obj);
     return 0;
 }
