@@ -53,6 +53,7 @@ char* buf = cjson_stringify(my_cjson_value); // Buf is a null-terminated string 
 
 free(buf); // IMPORTANT! The buffer returned from stringify must always be manually freed with free().
 ```
+Note: `cjson_stringify` may return `NULL` upon failure, you should always check this before attempting to use or free the buffer.
 
 ### Creating JSON values manually
 You can create JSON values using the utility `cjson_create_xxx` functions. Example:
