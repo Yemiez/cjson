@@ -1,3 +1,8 @@
+
+if [ ! -d "examples/bin" ]; then
+    mkdir "examples/bin"
+fi
+
 shopt -s nullglob
 for i in examples/*.c; do
     base=$(basename "$i")
