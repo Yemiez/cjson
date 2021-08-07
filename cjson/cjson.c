@@ -802,6 +802,81 @@ cjson_value* cjson_parse_ex(cjson_settings* settings, const char* buffer)
     return val;
 }
 
+cjson_value* cjson_create_empty()
+{
+    if (!global_settings) cjson_init(NULL);
+
+    cjson_value* empty = cjson_value_create(global_settings);
+    if (!empty) {
+        return NULL;
+    }
+
+    return empty;
+}
+
+cjson_value* cjson_create_object()
+{
+    cjson_value* obj = cjson_create_empty();
+    if (!obj) return NULL;
+
+    obj->type = cjson_object;
+    return obj;
+}
+cjson_value* cjson_create_array()
+{
+    cjson_value* arr = cjson_create_empty();
+    if (!arr) return NULL;
+
+    arr->type = cjson_array;
+    return arr;
+}
+cjson_value* cjson_create_null()
+{
+    cjson_value* nil = cjson_create_empty();
+    if (!nil) return NULL;
+
+    nil->type = cjson_null;
+    return nil;
+}
+cjson_value* cjson_create_boolean(int value)
+{
+    cjson_value* b = cjson_create_empty();
+    if (!b) return NULL;
+
+    b->type = cjson_boolean;
+    b->intval = value;
+    return b;
+}
+cjson_value* cjson_create_int(int value)
+{
+    cjson_value* i = cjson_create_empty();
+    if (!i) return NULL;
+
+    i->type = cjson_number;
+    i->flags |= cjson_flag_integer;
+    i->intval = value;
+    return i;
+}
+cjson_value* cjson_create_double(double value)
+{
+    cjson_value* d = cjson_create_empty();
+    if (!d) return NULL;
+
+    d->type = cjson_number;
+    d->flags |= cjson_flag_double;
+    d->doubleval = value;
+    return d;
+}
+cjson_value* cjson_create_string(const char* string)
+{
+    cjson_value* s = cjson_create_empty();
+    if (!s) return NULL;
+
+    s->type = cjson_string;
+    cjson_set_string(s, string);
+    return s;
+}
+
 int cjson_is_string(cjson_value* v) { return v->type == cjson_string; }
 int cjson_is_number(cjson_value* v) { return v->type == cjson_number; }
 int cjson_is_double(cjson_value* v) { return v->type == cjson_number && v->flags & cjson_flag_double; }
@@ -830,6 +905,15 @@ int cjson_is_null(cjson_value* v) { return v->type == cjson_null; }
 const char* cjson_get_string(cjson_value* v) { return v->string; }
 double cjson_get_double(cjson_value* v) { return v->doubleval; }
 int cjson_get_integer(cjson_value* v) { return v->intval; }
+
+int cjson_true(cjson_value* v)
+{
+    return v && v->intval == 1;
+}
+int cjson_false(cjson_value* v)
+{
+    return v && v->intval == 0;
+}
 
 void cjson_set_string(cjson_value* v, const char* str)
 {
@@ -871,6 +955,11 @@ void cjson_set_integer(cjson_value* v, int i)
     v->intval = i;
 }
 
+void cjson_append(cjson_value* p, cjson_value *c)
+{
+    cjson_push_child(p, c);
+}
+
 void cjson_push_child(cjson_value* p, cjson_value* c)
 {
     ++p->intval;
@@ -882,6 +971,35 @@ void cjson_push_child(cjson_value* p, cjson_value* c)
         insertion_point->next = c;
         c->prev = insertion_point;       
     }
+}
+
+int cjson_object_size(cjson_value* p)
+{
+    if (cjson_is_object(p)) {
+        return p->intval;
+    }
+
+    return 0;
+}
+
+int cjson_empty(cjson_value* p)
+{
+    if (p == NULL) return -1; // Maybe this should be true?
+
+    if (cjson_is_string(p)) {
+        return p->string == NULL || strlen(p->string) == 0;
+    }
+
+    if (cjson_is_array(p) || cjson_is_object(p)) {
+        return p->intval == 0;
+    }
+
+    return -1; // not applicable
+}
+
+void cjson_insert(cjson_value* p, const char* k, cjson_value* v)
+{
+    cjson_push_item(p, k, v);
 }
 
 void cjson_push_item(cjson_value* p, const char* k, cjson_value* v)
@@ -974,7 +1092,7 @@ int cjson_stringify_internal(char* out_buf, size_t buffer_count, cjson_value* v)
             if (cjson_is_integer(v)) {
                 return snprintf(out_buf, buffer_count, "%d", v->intval);
             }
-            return snprintf(out_buf, buffer_count, "%f", v->doubleval);
+            return snprintf(out_buf, buffer_count, "%g", v->doubleval);
         } 
         break;
         case cjson_object:

@@ -77,6 +77,16 @@ void cjson_free_value(cjson_value*);
 int cjson_error_code(void);
 const char* cjson_error_string(void);
 
+// Creating custom objects
+cjson_value* cjson_create_object(); // create empty object
+cjson_value* cjson_create_array(); // create empty array
+cjson_value* cjson_create_null(); // create a cjson_null value
+cjson_value* cjson_create_boolean(int value); // create a boolean value
+cjson_value* cjson_create_int(int value); // create a number that holds an integer
+cjson_value* cjson_create_double(double value); // create a number that holds a double
+cjson_value* cjson_create_string(const char* string); // create a string
+
+// Check & set functions
 int cjson_is_string(cjson_value*);
 int cjson_is_number(cjson_value*);
 int cjson_is_double(cjson_value*);
@@ -93,16 +103,26 @@ void cjson_set_string(cjson_value*, const char*);
 void cjson_set_double(cjson_value*, double);
 void cjson_set_integer(cjson_value*, int);
 
+// Handy functions for boolean values
+int cjson_true(cjson_value*);
+int cjson_false(cjson_value*);
+
 // // Array functions
+void cjson_append(cjson_value* p, cjson_value* c); // alias for push_child
 void cjson_push_child(cjson_value* p, cjson_value* c);
 int cjson_is_array(cjson_value*);
 int cjson_array_length(cjson_value*);
 cjson_value* cjson_array_at(cjson_value*, int);
 
 // Object functions
+void cjson_insert(cjson_value* p, const char* k, cjson_value* v); // alias for push_item
 void cjson_push_item(cjson_value* p, const char* k, cjson_value* v);
+int cjson_object_size(cjson_value*);
 cjson_value* cjson_search_item(cjson_value* p, const char* k); // case-sensitive search
 cjson_value* cjson_searchi_item(cjson_value* p, const char* k); // case-insensitive search
+
+// Check if array, object, or string is empty. Returns -1 in the case where the passed value is not of expected type or NULL.
+int cjson_empty(cjson_value*);
 
 // friendly string version of the current value type.
 const char* cjson_type_string(cjson_value*);
