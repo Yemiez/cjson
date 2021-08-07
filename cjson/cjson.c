@@ -1029,28 +1029,33 @@ cjson_value* cjson_searchi_kv(cjson_value* p, const char* k)
     return NULL;
 }
 
-int cjson_erase_kv_from_tree(cjson_value* kv)
+int cjson_erase_kv_from_tree(cjson_value* p, cjson_value* kv)
 {
     if (!kv) return 0;
 
     // remove item from tree
-    kv->prev->next = kv->next;
-    kv->next->prev = kv->prev;
+    if (kv->prev) kv->prev->next = kv->next;
+    if (kv->next) kv->next->prev = kv->prev;
+
+    if (p->child == kv) {
+        p->child = NULL;
+    }
 
     kv->next = NULL;
     kv->prev = NULL;
     cjson_free_value(kv);
+    --p->intval;
     return 1;
 }
 
 int cjson_erase(cjson_value* p, const char* k)
 {
-    return cjson_erase_kv_from_tree(cjson_search_kv(p, k));
+    return cjson_erase_kv_from_tree(p, cjson_search_kv(p, k));
 }
 
 int cjson_erasei(cjson_value* p, const char* k)
 {
-    return cjson_erase_kv_from_tree(cjson_searchi_kv(p, k));
+    return cjson_erase_kv_from_tree(p, cjson_searchi_kv(p, k));
 }
 
 int cjson_replace(cjson_value* p, const char* k, cjson_value* replacement, cjson_value** old_value)
