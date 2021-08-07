@@ -28,12 +28,58 @@ int errc = cjson_error_code(); // The error code, see enum `cson_error_code_type
 const char* errmsg = cjson_error_string(); // A friendly description of the error code.
 ```
 
-### Looping an object
+### Object functions
 You can loop an object with the help of the `CJSON_OBJECT_FOR_EACH` macro. Example usage:
 ```c
 CJSON_OBJECT_FOR_EACH(object, key, value, {
 	printf("My key is '%s' and my value type is '%s'\n", key, cjson_type_string(value));
 });
+```
+
+Inserting a key-value pair:
+```c
+cjson_insert(object, "the key", the_value);
+// Note that 'the_value' is now owned by 'object'. 
+```
+
+Erasing a key from an object:
+```c
+// did_erase will be 1 if the key existed and was erased.
+int did_erase = cjson_erase(object, "the key");
+
+// of course there is also a case-insensitive version 
+int did_erase = cjson_erasei(object, "the key");
+```
+
+Replacing a value in an object:
+```c
+cjson_value* new_value = cjson_create_integer(1337);
+cjson_value* old_value;
+
+// Try to replace
+int did_replace = cjson_replace(object, "the key", new_value, &old_value);
+if (did_replace) {
+	// Now we must either insert old_value somewhere else, or free it ourselves.
+	cjson_free_value(old_value);
+}
+
+// You can, of course, also let the replace function free the old value by passing NULL as the out ptr for old value.
+int did_replace = cjson_replace(object, "the key", new_value, NULL);
+
+// Now we can be sure that if the item was replaced, it was also properly freed.
+```
+> Note that the `cjson_replace` function does not have a case-insensitive version.
+
+You can search for an item inside of an object like this:
+```c
+cjson_value* pi = cjson_search_item(object, "pi");
+// If the key 'pi' doesn't exist, then the variable pi will be NULL.
+
+cjson_insert(object, "nAmE", cjson_create_string("Oskar"));
+
+// You can also do a case-insensitive search:
+cjson_value* name_fail = cjson_search_item(object "name"); // name_fail = NULL
+cjson_value* name = cjson_searchi_item(object "name"); // name = ptr to the value.
 ```
 
 ### Looping an array
@@ -53,7 +99,7 @@ char* buf = cjson_stringify(my_cjson_value); // Buf is a null-terminated string 
 
 free(buf); // IMPORTANT! The buffer returned from stringify must always be manually freed with free().
 ```
-Note: `cjson_stringify` may return `NULL` upon failure, you should always check this before attempting to use or free the buffer.
+> Note that `cjson_stringify` may return `NULL` upon failure, you should always check this before attempting to use or free the buffer.
 
 ### Creating JSON values manually
 You can create JSON values using the utility `cjson_create_xxx` functions. Example:

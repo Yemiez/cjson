@@ -115,6 +115,9 @@ int cjson_array_length(cjson_value*);
 cjson_value* cjson_array_at(cjson_value*, int);
 
 // Object functions
+int cjson_erase(cjson_value* p, const char* k);
+int cjson_erasei(cjson_value* p, const char* k);
+int cjson_replace(cjson_value* p, const char* k, cjson_value* replacement, cjson_value** old_value);
 void cjson_insert(cjson_value* p, const char* k, cjson_value* v); // alias for push_item
 void cjson_push_item(cjson_value* p, const char* k, cjson_value* v);
 int cjson_object_size(cjson_value*);

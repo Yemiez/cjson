@@ -1003,6 +1003,73 @@ int cjson_empty(cjson_value* p)
     return -1; // not applicable
 }
 
+cjson_value* cjson_search_kv(cjson_value* p, const char* k)
+{
+    cjson_value* c = p->child;
+    while (c != NULL) {
+        if (strcmp(c->string, k) == 0) {
+            return c; // Return the KV
+        }
+
+        c = c->next;
+    }
+    return NULL;
+}
+
+cjson_value* cjson_searchi_kv(cjson_value* p, const char* k)
+{
+    cjson_value* c = p->child;
+    while (c != NULL) {
+        if (stricmp(c->string, k) == 0) {
+            return c; // Return the KV
+        }
+
+        c = c->next;
+    }
+    return NULL;
+}
+
+int cjson_erase_kv_from_tree(cjson_value* kv)
+{
+    if (!kv) return 0;
+
+    // remove item from tree
+    kv->prev->next = kv->next;
+    kv->next->prev = kv->prev;
+
+    kv->next = NULL;
+    kv->prev = NULL;
+    cjson_free_value(kv);
+    return 1;
+}
+
+int cjson_erase(cjson_value* p, const char* k)
+{
+    return cjson_erase_kv_from_tree(cjson_search_kv(p, k));
+}
+
+int cjson_erasei(cjson_value* p, const char* k)
+{
+    return cjson_erase_kv_from_tree(cjson_searchi_kv(p, k));
+}
+
+int cjson_replace(cjson_value* p, const char* k, cjson_value* replacement, cjson_value** old_value)
+{
+    cjson_value* kv = cjson_search_kv(p, k);
+    if (!kv) return 0;
+
+    if (old_value != NULL) {
+        *old_value = kv->child;
+    }
+    else {
+        cjson_free_value(kv->child);
+    }
+
+    // Set the replacement
+    kv->child = replacement;
+    return 1;
+}
+
 void cjson_insert(cjson_value* p, const char* k, cjson_value* v)
 {
     cjson_push_item(p, k, v);
@@ -1043,28 +1110,16 @@ void cjson_push_item(cjson_value* p, const char* k, cjson_value* v)
 
 cjson_value* cjson_search_item(cjson_value* p, const char* k)
 {
-    cjson_value* c = p->child;
-    while (c != NULL) {
-        if (strcmp(c->string, k) == 0) {
-            return c->child; // Return the value (aka the child of a KV)
-        }
-
-        c = c->next;
-    }
-    return NULL;
+    cjson_value* kv = cjson_search_kv(p, k);
+    if (!kv) return NULL;
+    return kv->child;
 }
 
 cjson_value* cjson_searchi_item(cjson_value* p, const char* k)
 {
-    cjson_value* c = p->child;
-    while (c != NULL) {
-        if (stricmp(c->string, k) == 0) {
-            return c->child; // Return the value (aka the child of a KV)
-        }
-
-        c = c->next;
-    }
-    return NULL;
+    cjson_value* kv = cjson_searchi_kv(p, k);
+    if (!kv) return NULL;
+    return kv->child;
 }
 
 const char* cjson_type_string(cjson_value* v)
