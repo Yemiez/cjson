@@ -16,21 +16,6 @@ typedef enum {
     cjson_error_code_syntax_expected_colon,
 } cjson_error_code_type;
 
-typedef struct cjson_settings {
-    void* (*mem_alloc)(size_t);
-    void (*mem_free)(void*);
-#ifdef CJSON_ENABLE_MULTITHREAD_SUPPORT
-    void* mtx;
-    int multithreaded;
-#endif
-#ifdef CJSON_ENABLE_MEMORY_LOGGING
-    size_t memory_limit;
-    size_t used_memory;
-    size_t highest_memory_usage;
-#endif
-    size_t errc;
-} cjson_settings;
-
 typedef enum {
     cjson_invalid, // invalid (internal only, should never be returned from cjson_parse variants)
     cjson_kv, // key-value (for objects, string = key, child = value)
@@ -47,12 +32,6 @@ typedef enum {
     cjson_flag_integer = 1 << 2,
 } cjson_flags;
 
-typedef struct {
-    size_t row;
-    size_t col;
-    size_t ofs;
-} cjson_pos;
-
 // You should never directly access the fields inside here.
 typedef struct __cjson_value {
     struct __cjson_value* prev;
@@ -65,6 +44,38 @@ typedef struct __cjson_value {
     int intval;
     int flags;
 } cjson_value;
+
+typedef struct cjson_settings {
+    void* (*mem_alloc)(size_t);
+    void (*mem_free)(void*);
+    
+    // Object hooks
+    int (*object_start)(cjson_value* parent, cjson_value* object);
+    int (*object_key_value)(cjson_value* object, const char* key, cjson_value* the_value);
+    int (*object_end)(cjson_value* object);
+
+    // Array hooks
+    int (*array_start)(cjson_value* parent, cjson_value* array);
+    int (*array_element)(cjson_value* array, cjson_value* element);
+    int (*array_end)(cjson_value* array);
+
+#ifdef CJSON_ENABLE_MULTITHREAD_SUPPORT
+    void* mtx;
+    int multithreaded;
+#endif
+#ifdef CJSON_ENABLE_MEMORY_LOGGING
+    size_t memory_limit;
+    size_t used_memory;
+    size_t highest_memory_usage;
+#endif
+    size_t errc;
+} cjson_settings;
+
+typedef struct {
+    size_t row;
+    size_t col;
+    size_t ofs;
+} cjson_pos;
 
 // Pass NULL for default
 void cjson_init(cjson_settings*);

@@ -102,6 +102,12 @@ void cjson_init(cjson_settings* settings)
         global_settings = malloc(sizeof(cjson_settings));
         global_settings->mem_alloc = &malloc;
         global_settings->mem_free = &free;
+        global_settings->object_start = NULL;
+        global_settings->object_key_value = NULL;
+        global_settings->object_end = NULL;
+        global_settings->array_start = NULL;
+        global_settings->array_element = NULL;
+        global_settings->array_end = NULL;
 #ifdef CJSON_ENABLE_MULTITHREAD_SUPPORT
         global_settings->mtx = NULL;
         global_settings->multithreaded = 0;
@@ -115,18 +121,7 @@ void cjson_init(cjson_settings* settings)
     }
     else {
         global_settings = malloc(sizeof(cjson_settings));
-        global_settings->mem_alloc = settings->mem_alloc;
-        global_settings->mem_free = settings->mem_free;
-#ifdef CJSON_ENABLE_MULTITHREAD_SUPPORT
-        global_settings->mtx = settings->mtx;
-        global_settings->multithreaded = settings->multithreaded;
-#endif
-#ifdef CJSON_ENABLE_MEMORY_LOGGING
-        global_settings->memory_limit = settings->memory_limit;
-        global_settings->used_memory = 0;
-        global_settings->highest_memory_usage = 0;
-#endif
-        global_settings->errc = cjson_error_code_ok;
+        memcpy(global_settings, settings, sizeof(cjson_settings));
     }
 }
 
@@ -652,9 +647,11 @@ cjson_value* cjson_parse_impl(cjson_context* ctx)
 
                 if (cjson_is_array(ctx->root_state->wip_value)) {
                     cjson_push_state(ctx, in_array, ctx->root_state->wip_value, parse_flag_expecting_valuetype);
+                    if (ctx->settings->array_start) ctx->settings->array_start(NULL, ctx->root_state->wip_value);
                 }
                 else if (cjson_is_object(ctx->root_state->wip_value)) {
                     cjson_push_state(ctx, in_object, ctx->root_state->wip_value, parse_flag_expecting_valuetype);
+                    if (ctx->settings->array_start) ctx->settings->object_start(NULL, ctx->root_state->wip_value);
                 }
             }
             break;
@@ -677,6 +674,7 @@ cjson_value* cjson_parse_impl(cjson_context* ctx)
 
                 if (c == ']') {
                     // End of array.
+                    if (ctx->settings->array_end) ctx->settings->array_end(state->wip_value);
                     cjson_consume(ctx);
                     cjson_pop_state(ctx);
                     continue;
@@ -687,13 +685,17 @@ cjson_value* cjson_parse_impl(cjson_context* ctx)
                 if (!cjson_partial_parse(ctx, &child)) {
                     return NULL;
                 }
+
+                if (ctx->settings->array_element) ctx->settings->array_element(state->wip_value, child);
                 cjson_push_child(state->wip_value, child);
                 
                 if (cjson_is_array(child)) {
                     cjson_push_state(ctx, in_array, child, parse_flag_expecting_valuetype);
+                    if (ctx->settings->array_start) ctx->settings->array_start(state->wip_value, child);
                 }
                 else if (cjson_is_object(child)) {
                     cjson_push_state(ctx, in_object, child, parse_flag_expecting_valuetype);
+                    if (ctx->settings->object_start) ctx->settings->object_start(state->wip_value, child);
                 }
 
                 // Remove expecting value type and add after value parse flags
@@ -719,7 +721,8 @@ cjson_value* cjson_parse_impl(cjson_context* ctx)
                 }
 
                 if (c == '}') {
-                    // End of array.
+                    // End of object.
+                    if (ctx->settings->object_end) ctx->settings->object_end(state->wip_value);
                     cjson_consume(ctx);
                     cjson_pop_state(ctx);
                     continue;
@@ -751,14 +754,17 @@ cjson_value* cjson_parse_impl(cjson_context* ctx)
                     return NULL;
                 }
 
+                if (ctx->settings->object_key_value) ctx->settings->object_key_value(state->wip_value, key, val);
                 cjson_push_item(state->wip_value, key, val);
                 cjson_free(ctx->settings, key);
 
                 if (cjson_is_array(val)) {
                     cjson_push_state(ctx, in_array, val, parse_flag_expecting_valuetype);
+                    if (ctx->settings->array_start) ctx->settings->array_start(state->wip_value, val);
                 }
                 else if (cjson_is_object(val)) {
                     cjson_push_state(ctx, in_object, val, parse_flag_expecting_valuetype);
+                    if (ctx->settings->object_end) ctx->settings->object_start(state->wip_value, val);
                 }
 
                 // Remove expecting value type and add after value parse flags
