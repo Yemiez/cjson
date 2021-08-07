@@ -79,6 +79,29 @@ free(buf);
 cjson_free_value(object);
 ```
 
+You can of course also do this with arrays:
+```c
+cjson_value* arr = cjson_create_array();
+if (!arr) {
+	fprintf(stderr, "Failed to create empty array!\n");
+	return -1;
+}
+
+// append the elements
+cjson_append(arr, cjson_create_integer(1));
+cjson_append(arr, cjson_create_integer(2));
+cjson_append(arr, cjson_create_integer(3));
+cjson_append(arr, cjson_create_integer(4));
+
+// We can then serialize it as with any other cjson_value.
+char* buf = cjson_stringify(arr); // buf = [1,2,3,4]
+printf("Serialized: %s\n", buf);
+free(buf);
+
+// And as with objects, we only need to free the top-level parent.
+cjson_free_value(arr);
+```
+
 ## TODO
 * Documentation and examples
 * Utility functions (such as convenient lookup functions, i.e. `key>depth1>depth2>depth3>[4]`);.
