@@ -6,9 +6,15 @@
 #include <ctype.h>
 #include <time.h>
 
+#ifdef CJSON_ENABLE_TIMER
 #define TIMER_INIT() clock_t timer_start, timer_end; const char* timer_function;
 #define TIMER_BEGIN(fn) timer_start = clock(); timer_function = #fn;
 #define TIMER_END() timer_end = clock(); printf("Timer %s took %f seconds to run.\n", timer_function, ((double)(timer_end - timer_start) / CLOCKS_PER_SEC));
+#else
+#define TIMER_INIT()
+#define TIMER_BEGIN(fn)
+#define TIMER_END()
+#endif
 
 cjson_settings* global_settings = 0;
 
