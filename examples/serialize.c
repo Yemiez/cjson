@@ -9,7 +9,7 @@ int main()
         return -1;
     }
 
-    // Insert the values
+    // Insert the value
     cjson_insert(object, "pi", cjson_create_double(3.14));
     cjson_insert(object, "happy", cjson_create_boolean(1));
     cjson_insert(object, "name", cjson_create_string("Oskar"));
