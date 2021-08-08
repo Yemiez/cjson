@@ -687,7 +687,7 @@ cjson_value* cjson_parse_impl(cjson_context* ctx)
                 if (!cjson_partial_parse(ctx, &child)) {
                     return NULL;
                 }
-                cjson_push_child(state->wip_value, child);
+                cjson_append(state->wip_value, child);
                 
                 if (cjson_is_array(child)) {
                     cjson_push_state(ctx, in_array, child, parse_flag_expecting_valuetype);
@@ -751,7 +751,7 @@ cjson_value* cjson_parse_impl(cjson_context* ctx)
                     return NULL;
                 }
 
-                cjson_push_item(state->wip_value, key, val);
+                cjson_insert(state->wip_value, key, val);
                 cjson_free(ctx->settings, key);
 
                 if (cjson_is_array(val)) {
@@ -962,6 +962,38 @@ void cjson_set_integer(cjson_value* v, int i)
 }
 
 
+int cjson_replaceidx(cjson_value* p, int idx, cjson_value* replacement, cjson_value** old_value)
+{
+		int j = 0;
+		cjson_value* c = p->child;
+		while (c != NULL) {
+			if (j == idx) {
+				// replace
+				if (c->prev) c->prev->next = replacement;
+				if (c->next) c->next->prev = replacement;
+				if (c == p->child) p->child = replacement;
+
+				replacement->next = c->next;
+				replacement->prev = c->prev;
+				c->next = NULL;
+				c->prev = NULL;
+
+				if (old_value) {
+					*old_value = replacement;
+				}
+				else {
+					cjson_free_value(c);
+				}
+
+				return 1;
+			}	
+
+			++j;
+			c = c->next;
+		}
+
+		return 0;
+}
 int cjson_eraseidx(cjson_value* p, int idx)
 {
 	int j = 0;
@@ -987,11 +1019,6 @@ int cjson_eraseidx(cjson_value* p, int idx)
 }
 
 void cjson_append(cjson_value* p, cjson_value *c)
-{
-    cjson_push_child(p, c);
-}
-
-void cjson_push_child(cjson_value* p, cjson_value* c)
 {
     ++p->intval;
     if (!p->child) {
@@ -1099,11 +1126,6 @@ int cjson_replace(cjson_value* p, const char* k, cjson_value* replacement, cjson
 }
 
 void cjson_insert(cjson_value* p, const char* k, cjson_value* v)
-{
-    cjson_push_item(p, k, v);
-}
-
-void cjson_push_item(cjson_value* p, const char* k, cjson_value* v)
 {
     ++p->intval;
 

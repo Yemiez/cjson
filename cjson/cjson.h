@@ -107,22 +107,35 @@ void cjson_set_integer(cjson_value*, int);
 int cjson_true(cjson_value*);
 int cjson_false(cjson_value*);
 
-// // Array functions
+/*================ Object functions ================*/
+// replaces the element at index idx with replacement. if old_value is not NULL then ownership of the replaced value is passed to the callee.
+int cjson_replaceidx(cjson_value* p, int idx, cjson_value* replacement, cjson_value** old_value);
+// erases the elment at index idx.
 int cjson_eraseidx(cjson_value* p, int idx);
-void cjson_append(cjson_value* p, cjson_value* c); // alias for push_child
-void cjson_push_child(cjson_value* p, cjson_value* c);
+// appends element c to p. Ownership is passed onto p.
+void cjson_append(cjson_value* p, cjson_value* c);
+// returns 1 if the value passed to the function is an array.
 int cjson_is_array(cjson_value*);
+// returns the amount of elemnts inside the array.
 int cjson_array_length(cjson_value*);
+// returns the elment at index.
 cjson_value* cjson_array_at(cjson_value*, int);
 
-// Object functions
+/*================ Object functions ================*/
+
+// returns 1 if value was erased
 int cjson_erase(cjson_value* p, const char* k);
+// returns 1 if value was erased
 int cjson_erasei(cjson_value* p, const char* k);
+// returns 1 if value was replaced. If old_value != NULL then ownership is passed to callee and it is your responsibility to deallocate or use otherwise.
 int cjson_replace(cjson_value* p, const char* k, cjson_value* replacement, cjson_value** old_value);
-void cjson_insert(cjson_value* p, const char* k, cjson_value* v); // alias for push_item
-void cjson_push_item(cjson_value* p, const char* k, cjson_value* v);
+// inserts v into p, with the key k. Ownership is adopted by p.
+void cjson_insert(cjson_value* p, const char* k, cjson_value* v);
+// get the size of the object (the amount of keys it holds)
 int cjson_object_size(cjson_value*);
+// case-sensitive search for key k.
 cjson_value* cjson_search_item(cjson_value* p, const char* k); // case-sensitive search
+// case-insensitive search for key k.
 cjson_value* cjson_searchi_item(cjson_value* p, const char* k); // case-insensitive search
 
 // Check if array, object, or string is empty. Returns -1 in the case where the passed value is not of expected type or NULL.
