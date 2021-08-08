@@ -108,6 +108,7 @@ int cjson_true(cjson_value*);
 int cjson_false(cjson_value*);
 
 // // Array functions
+int cjson_eraseidx(cjson_value* p, int idx);
 void cjson_append(cjson_value* p, cjson_value* c); // alias for push_child
 void cjson_push_child(cjson_value* p, cjson_value* c);
 int cjson_is_array(cjson_value*);

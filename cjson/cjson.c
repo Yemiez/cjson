@@ -961,6 +961,31 @@ void cjson_set_integer(cjson_value* v, int i)
     v->intval = i;
 }
 
+
+int cjson_eraseidx(cjson_value* p, int idx)
+{
+	int j = 0;
+	cjson_value* c = p->child;
+	while (p != NULL) { 
+		if (j == idx) {
+			if (c->prev) c->prev->next = c->next;
+			if (c->next) c->next->prev = c->prev;
+			if (c == p->child) p->child = NULL;
+			if (p->child == NULL && c->next) p->child = c->next;
+			c->next = NULL;
+			c->prev = NULL;
+			
+			cjson_free_value(c);
+			--p->intval;
+			return 1;
+		}
+		
+		j++;
+		c = c->next;
+	}	
+	return 0;
+}
+
 void cjson_append(cjson_value* p, cjson_value *c)
 {
     cjson_push_child(p, c);
@@ -1036,10 +1061,8 @@ int cjson_erase_kv_from_tree(cjson_value* p, cjson_value* kv)
     // remove item from tree
     if (kv->prev) kv->prev->next = kv->next;
     if (kv->next) kv->next->prev = kv->prev;
-
-    if (p->child == kv) {
-        p->child = NULL;
-    }
+    if (p->child == kv) p->child = NULL;
+    if (p->child == NULL && kv->next) p->child = kv->next;
 
     kv->next = NULL;
     kv->prev = NULL;
