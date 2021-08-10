@@ -86,6 +86,7 @@ const char* cjson_error_string()
 		case cjson_error_code_syntax_unexpected_comma: return "Syntax error: Unexpected comma in array or object";
 		case cjson_error_code_syntax_expected_key: return "Syntax error: Expected key (string) in object";
 		case cjson_error_code_syntax_expected_colon: return "Syntax error: Expected colon after key";
+		case cjson_error_code_syntax_unclosed_value: return "Syntax error: Unclosed value ([ but not ], or { but no }). Enable 'permissive' to allow";
 	}
 }
 
@@ -112,22 +113,18 @@ void cjson_init(cjson_settings* settings)
 		global_settings->highest_memory_usage = 0;
 #endif
 		global_settings->errc = cjson_error_code_ok;
+		global_settings->permissive = 0;
 	}
 	else {
 		global_settings = malloc(sizeof(cjson_settings));
-		global_settings->mem_alloc = settings->mem_alloc;
-		global_settings->mem_free = settings->mem_free;
-#ifdef CJSON_ENABLE_MULTITHREAD_SUPPORT
-		global_settings->mtx = settings->mtx;
-		global_settings->multithreaded = settings->multithreaded;
-#endif
-#ifdef CJSON_ENABLE_MEMORY_LOGGING
-		global_settings->memory_limit = settings->memory_limit;
-		global_settings->used_memory = 0;
-		global_settings->highest_memory_usage = 0;
-#endif
-		global_settings->errc = cjson_error_code_ok;
+		memcpy(global_settings, settings, sizeof(cjson_settings));
 	}
+}
+
+void cjson_set_permissive(int permissive)
+{
+	if (!global_settings) cjson_init(NULL);
+	global_settings->permissive = permissive;
 }
 
 void cjson_shutdown()
@@ -296,8 +293,11 @@ void cjson_pop_state(cjson_context* ctx)
 	cjson_free(ctx->settings, old_tail);
 }
 
-void cjson_free_remaining_states(cjson_context* ctx)
+void cjson_free_remaining_states(cjson_context* ctx, int free_root_node)
 {
+	if (free_root_node && ctx->root_state) {
+		cjson_free_value(ctx->root_state->wip_value);
+	}
 	while (ctx->tail_state) {
 		cjson_pop_state(ctx);
 	}
@@ -560,22 +560,20 @@ int cjson_partial_parse(cjson_context* ctx, cjson_value** out)
 			goto error;
 		}
 	}
-	else if (isdigit(c)) {
-		(*out)->flags = cjson_number;
+	else if (isdigit(c) || c == '.' || c == '-') {
 		int punctflag = 0;
 		char* buf = cjson_consume_digits(ctx, &punctflag);
-
 		if (!buf) {
 			reason = "digits parse failed";
 			goto error;
 		}
 
 		if (punctflag) {
-			(*out)->flags |= cjson_double;
+			(*out)->flags = cjson_number | cjson_double;
 			(*out)->doubleval = strtod(buf, NULL);
 		}
 		else {
-			(*out)->flags |= cjson_integer;
+			(*out)->flags = cjson_number | cjson_integer;
 			(*out)->intval = strtol(buf, NULL, 0);
 		}
 
@@ -637,15 +635,11 @@ cjson_value* cjson_parse_impl(cjson_context* ctx)
 			{
 				// Has a root node already been discovered?
 				if (ctx->root_state->wip_value != NULL) {
-					// TODO dealloc
+					cjson_free_value(ctx->root_state->wip_value);
 					ctx->settings->errc = cjson_error_code_syntax_multiple_root_nodes;
 					return NULL;
 				}
 				if (!cjson_partial_parse(ctx, &ctx->root_state->wip_value)) {
-					return NULL;
-				}
-
-				if (!ctx->root_state->wip_value) {
 					return NULL;
 				}
 
@@ -768,6 +762,11 @@ cjson_value* cjson_parse_impl(cjson_context* ctx)
 		}
 	}
 
+	if (ctx->root_state != ctx->tail_state && ctx->root_state != NULL && !ctx->settings->permissive) {
+		ctx->settings->errc = cjson_error_code_syntax_unclosed_value;
+		return NULL;
+	}
+
 	return ctx->root_state != NULL ?
 		ctx->root_state->wip_value : NULL;
 }
@@ -802,8 +801,12 @@ cjson_value* cjson_parse_ex(cjson_settings* settings, const char* buffer)
 	ctx.pos = cjson_make_pos(ctx.settings, 0, 0, 0); 
 	cjson_push_state(&ctx, initial_state, NULL, 0);
 	cjson_value* val = cjson_parse_impl(&ctx);
+	int free_root_node = 0;
+	if (!val) {
+		free_root_node = 1;
+	}
 	cjson_free(settings, ctx.pos);
-	cjson_free_remaining_states(&ctx);
+	cjson_free_remaining_states(&ctx, free_root_node);
 	return val;
 }
 
@@ -882,8 +885,8 @@ cjson_value* cjson_create_string(const char* string)
 
 int cjson_is_string(cjson_value* v) { return v->flags & cjson_string; }
 int cjson_is_number(cjson_value* v) { return v->flags & cjson_number; }
-int cjson_is_double(cjson_value* v) { return v->flags & (cjson_number | cjson_double); }
-int cjson_is_integer(cjson_value* v) { return v->flags & (cjson_number | cjson_integer); }
+int cjson_is_double(cjson_value* v) { return v->flags & (cjson_number | cjson_double) == (cjson_number | cjson_double); }
+int cjson_is_integer(cjson_value* v) { return v->flags & (cjson_number | cjson_integer) == (cjson_number | cjson_integer); }
 int cjson_is_object(cjson_value* v) { return v->flags & cjson_object; }
 int cjson_is_array(cjson_value* v) { return v->flags & cjson_array; }
 int cjson_array_length(cjson_value* v) { return v->intval; }

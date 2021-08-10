@@ -14,6 +14,7 @@ typedef enum {
     cjson_error_code_syntax_unexpected_comma,
     cjson_error_code_syntax_expected_key,
     cjson_error_code_syntax_expected_colon,
+	cjson_error_code_syntax_unclosed_value,
 } cjson_error_code_type;
 
 typedef struct cjson_settings {
@@ -29,6 +30,10 @@ typedef struct cjson_settings {
     size_t highest_memory_usage;
 #endif
     size_t errc;
+	
+	// allows for permissive parsing, i.e. closing '[1, 2, {"key": "value"' will parse just fine,
+	// and act as if both the array and object were properly closed.
+	int permissive; // default = 0 (meaning errors will be raised).
 } cjson_settings;
 
 typedef enum {
@@ -65,6 +70,7 @@ typedef struct __cjson_value {
 
 // Initializes cjson lib with some basic settings. It is not necessary to call this function.
 void cjson_init(cjson_settings*);
+void cjson_set_permissive(int permissive);
 
 #ifdef CJSON_ENABLE_MEMORY_LOGGING
 // Prints some basic memory statistics (maximum memory in use at a single point, and current use).
