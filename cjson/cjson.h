@@ -182,10 +182,14 @@ const char* cjson_type_string(cjson_value*);
 // stringifies (serialize) the JSON value into JSON-formatted string. You must manually free the buffer if it is nonnull.
 char* cjson_stringify(cjson_value*);
 
+#define CJSON_UNUSED(x) (void)(x)
+
 #define CJSON_OBJECT_FOR_EACH(object, k, v, body) cjson_value* iter_##object = object->child; \
     while (iter_##object != NULL) { \
         const char* k = iter_##object->string; \
         cjson_value* v = iter_##object->child; \
+		CJSON_UNUSED(k); \
+		CJSON_UNUSED(v); \
         body \
         iter_##object = iter_##object->next; \
     }
