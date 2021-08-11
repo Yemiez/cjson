@@ -11,7 +11,6 @@ int main()
 
     CJSON_OBJECT_FOR_EACH(obj, k, v, {
         printf("Object has key: %s\n", k);
-        v;
     })
 
     cjson_value* pi = cjson_search_item(obj, "pi");
