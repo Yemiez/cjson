@@ -88,6 +88,8 @@ const char* cjson_error_string()
 		case cjson_error_code_syntax_expected_colon: return "Syntax error: Expected colon after key";
 		case cjson_error_code_syntax_unclosed_value: return "Syntax error: Unclosed value ([ but not ], or { but no }). Enable 'permissive' to allow";
 	}
+
+	return "unknown error (not in enum)";
 }
 
 void cjson_print_mem(void)
@@ -530,10 +532,8 @@ int cjson_partial_parse(cjson_context* ctx, cjson_value** out)
 	}
 	
 	const char *reason = 0;
-	int was_allocated = 0;
 	if (!*out) {
 		*out = cjson_value_create(ctx->settings);
-		was_allocated = 1;
 	}
 
 	if (!*out) {
@@ -885,8 +885,8 @@ cjson_value* cjson_create_string(const char* string)
 
 int cjson_is_string(cjson_value* v) { return v->flags & cjson_string; }
 int cjson_is_number(cjson_value* v) { return v->flags & cjson_number; }
-int cjson_is_double(cjson_value* v) { return v->flags & (cjson_number | cjson_double) == (cjson_number | cjson_double); }
-int cjson_is_integer(cjson_value* v) { return v->flags & (cjson_number | cjson_integer) == (cjson_number | cjson_integer); }
+int cjson_is_double(cjson_value* v) { return (v->flags & (cjson_number | cjson_double)) == (cjson_number | cjson_double); }
+int cjson_is_integer(cjson_value* v) { return (v->flags & (cjson_number | cjson_integer)) == (cjson_number | cjson_integer); }
 int cjson_is_object(cjson_value* v) { return v->flags & cjson_object; }
 int cjson_is_array(cjson_value* v) { return v->flags & cjson_array; }
 int cjson_array_length(cjson_value* v) { return v->intval; }
@@ -1176,16 +1176,16 @@ cjson_value* cjson_searchi_item(cjson_value* p, const char* k)
 
 const char* cjson_type_string(cjson_value* v)
 {
-	if (v->flags & cjson_kv == cjson_kv) return "cjson_kv";
-	if (v->flags & cjson_string == cjson_string) return "cjson_string";
-	if (v->flags & cjson_number == cjson_number) {
-		if (v->flags & cjson_integer == cjson_integer) return "cjson_number (int)";
-		if (v->flags & cjson_double == cjson_double) return "cjson_number (double)";
+	if ((v->flags & cjson_kv) == cjson_kv) return "cjson_kv";
+	if ((v->flags & cjson_string) == cjson_string) return "cjson_string";
+	if ((v->flags & cjson_number) == cjson_number) {
+		if ((v->flags & cjson_integer) == cjson_integer) return "cjson_number (int)";
+		if ((v->flags & cjson_double) == cjson_double) return "cjson_number (double)";
 		return "cjson_number (unk)";
 	}
-	if (v->flags & cjson_object == cjson_object) return "cjson_object";
-	if (v->flags & cjson_boolean == cjson_boolean) return "cjson_boolean";
-	if (v->flags & cjson_null == cjson_null) return "cjson_null";
+	if ((v->flags & cjson_object) == cjson_object) return "cjson_object";
+	if ((v->flags & cjson_boolean) == cjson_boolean) return "cjson_boolean";
+	if ((v->flags & cjson_null) == cjson_null) return "cjson_null";
 
 	return "invalid";
 }
